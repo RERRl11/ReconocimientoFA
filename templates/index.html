@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="es">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>Reconocimiento facial</title>
+        <!-- Bootstrap CSS -->
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+        <!-- Custom styles (after Bootstrap to allow overrides) -->
+        <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    </head>
+
+        <body>
+
+        <!-- Barra de navegación (Bootstrap) -->
+        <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
+            <div class="container">
+                <a class="navbar-brand fw-bold" href="#">Reconocimiento Facial</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav" aria-controls="mainNav" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="mainNav">
+                    <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                        <li class="nav-item"><a class="nav-link" href="#" onclick="cambiarSeccion('principal')"><i class="fa fa-home me-1"></i>Principal</a></li>
+                        <li class="nav-item"><a class="nav-link" href="#" onclick="cambiarSeccion('registro')"><i class="fa fa-user-plus me-1"></i>Registro</a></li>
+                        <li class="nav-item"><a class="nav-link" href="#" onclick="cambiarSeccion('detectar')"><i class="fa fa-video me-1"></i>Detectar</a></li>
+                        <li class="nav-item"><a class="nav-link" href="#" onclick="cambiarSeccion('datos')"><i class="fa fa-table me-1"></i>Datos</a></li>
+                    </ul>
+                    <div class="d-flex">
+                        <button id="btnOpenCameras" class="btn btn-outline-primary me-2" onclick="toggleCameraPanel()"><i class="fa fa-camera me-1"></i>Cámaras</button>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <div id="appStatus" class="app-status"></div>
+        <div id="cameraPanel" class="camera-panel hidden">
+                <div class="container d-flex gap-2 align-items-center">
+                        <button id="btnDetectCams" onclick="enumerarCamaras()" class="btn btn-sm btn-primary">Detectar cámaras</button>
+                        <select id="cameraSelect" class="form-select form-select-sm camera-select"></select>
+                        <button id="btnApplyCamera" onclick="seleccionarCamara()" class="btn btn-sm btn-success">Usar cámara</button>
+                        <button onclick="toggleCameraPanel()" class="btn btn-sm btn-secondary">Cerrar</button>
+                </div>
+        </div>
+
+    <hr>
+
+    <div id="principal" class="seccion">
+
+        <h2>Estado de Conexión</h2>
+
+        <ul>
+            <li>
+                <strong>Servidor Backend Django</strong><br>
+                Configuración del backend y conexión con el servidor
+            </li>
+            <li>
+                <strong>Face_reconigtion</strong><br>
+                Procesamiento de reconocimiento facial en el backend
+            </li>
+            <li>
+                <strong>Base de Datos MySQL</strong><br>
+                Conectada mediante PyMySQL en Django
+            </li>
+        </ul>
+
+        <hr>
+
+        <h2>Características</h2>
+        <ul>
+            <li>Reconocimiento facial con face_reconigtion</li>
+            <li>Almacenamiento de vectores faciales en MySQL</li>
+            <li>Registro automático de visitas de entrada y salida</li>
+            <li>Detección en tiempo real cada 3 segundos</li>
+        </ul>
+
+        <hr>
+
+        <h2>Instrucciones de Uso</h2>
+
+        <h3>1. Registrar Usuarios</h3>
+        <p>
+            Ve a la pestaña Registro, selecciona la cámara,
+            completa el formulario y captura el rostro.
+        </p>
+
+        <h3>2. Iniciar Detección</h3>
+        <p>
+            Ve a Detectar, selecciona la cámara e inicia
+            el reconocimiento facial automático.
+        </p>
+
+        <h3>3. Ver Datos</h3>
+        <p>
+            Consulta usuarios registrados y el historial
+            de visitas en la pestaña Datos.
+        </p>
+
+    </div>
+
+
+    <div id="registro" class="seccion hidden">
+
+        <h2>Formulario de Registro</h2>
+
+        <form id="formRegistro">
+            <label>Nombre</label><br>
+            <input type="text" id="nombre"><br><br>
+
+            <label>Apellido</label><br>
+            <input type="text" id="apellido"><br><br>
+
+            <label>Identificación</label><br>
+            <input type="text" id="dni"><br><br>
+
+            <label>Correo</label><br>
+            <input type="email" id="correo"><br><br>
+
+            <label>Teléfono</label><br>
+            <input type="text" id="telefono"><br><br>
+
+            <label>Departamento</label><br>
+            <input type="text" id="departamento"><br><br>
+        </form>
+
+        <hr>
+
+        <h3>Captura Facial</h3>
+
+        <!-- Video -->
+        <video id="video" width="320" height="240" autoplay class="hidden"></video>
+
+        <!-- Canvas (imagen capturada) -->
+        <canvas id="canvas" width="320" height="240" class="hidden"></canvas>
+
+        <br>
+
+
+        <!-- Botones de captura (la cámara se enciende automáticamente al entrar) -->
+        <button id="btnCapturar" class="hidden" onclick="capturar()">Capturar Imagen</button>
+
+        <button id="btnReintentar" class="hidden" onclick="reiniciarCaptura()">Capturar Nuevamente</button>
+
+        <button type = "button" onclick = "guardarUsuario()"> Guardar </button>
+
+    </div>
+
+
+    <div id="detectar" class="seccion hidden">
+        <h2>Detección Facial en Tiempo Real</h2>
+
+        <!-- Video -->
+        <video id="videoDetectar" width="320" height="240" autoplay class="hidden"></video>
+
+        <br>
+
+        <!-- La detección se inicia automáticamente al seleccionar esta pestaña -->
+
+        <hr>
+
+        <!-- Estado -->
+        <p id="estado">
+            Estado: <strong>Inactivo</strong>
+        </p>
+
+    </div>
+
+    <div id="datos" class="seccion hidden">
+        <h2>Usuarios Registrados (<span id="totalUsuarios">0</span>)</h2>
+
+        <div id="usuariosVacio">
+            <p>No hay usuarios registrados en la base de datos</p>
+        </div>
+
+        <table id="tablaUsuarios" class="hidden">
+            <thead>
+                <tr>
+                    <th>Nombre</th>
+                    <th>Apellido</th>
+                    <th>DNI</th>
+                    <th>Email</th>
+                    <th>Departamento</th>
+                    <th>Fecha</th>
+                </tr>
+            </thead>
+            <tbody id="usuariosBody">
+            </tbody>
+        </table>
+
+        <hr>
+
+        <h2>Registro de Visitas (<span id="totalVisitas">0</span>)</h2>
+
+        <div id="visitasVacio">
+            <p>No hay visitas registradas en la base de datos</p>
+        </div>
+
+        <table id="tablaVisitas" class="hidden">
+            <thead>
+                <tr>
+                    <th>Nombre</th>
+                    <th>Apellido</th>
+                    <th>DNI</th>
+                    <th>Fecha</th>
+                </tr>
+            </thead>
+            <tbody id="visitasBody">
+            </tbody>
+        </table>
+
+    </div>
+
+    <script src="{% static 'js/app.js' %}"></script>
+    <script src="{% static 'js/registro.js' %}"></script>
+    <script src="{% static 'js/deteccion.js' %}"></script>
+    <script src="{% static 'js/datos.js' %}"></script>
+    <!-- Bootstrap JS bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
+    </body>
+
+</html>
+
+
